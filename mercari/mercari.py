@@ -1,5 +1,7 @@
 import os
+import random
 import re
+import urllib.parse
 from enum import Enum
 from math import ceil
 
@@ -44,12 +46,25 @@ def createItem(productHTML):
 def parse(url, data):
     # returns [] if page has no items on it
     # returns [Item's] otherwise
-    headers = {
-        "Accept-Encoding": "deflate, gzip",
-        "Host": "www.mercari.com",
-        "User-Agent": "a user agent string is used to detect bots or something?",
-    }
-    r = requests.get(url, params=data, headers=headers)
+
+    # let's build up the url ourselves
+    # I know requests can do it, but I need to do it myself cause we need
+    # special encoding!
+    url = "{}?{}".format(
+        url,
+        urllib.parse.urlencode(data)
+    )
+    # now we'll escape everything again so google doesn't parse it themselves
+    # we need to pass these params into the mercari site, not google's
+    url = urllib.parse.quote_plus(url)
+
+    # use google's proxy because mercari blocks some servers it seems like?
+    # they have a bunch, so let's pick a random one each time incase they're tracking us...
+    num = random.randint(0, 32)
+    url = "https://images{}-focus-opensocial.googleusercontent.com/gadgets/proxy?container=none&url={}".format(
+        num,
+        url)
+    r = requests.get(url)
     html = BeautifulSoup(r.text, "html.parser")
     return html.find_all("section", class_="items-box")
 
