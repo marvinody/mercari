@@ -50,7 +50,6 @@ def parse(url, data):
         "User-Agent": "a user agent string is used to detect bots or something?",
     }
     r = requests.get(url, params=data, headers=headers)
-    print(r.url)
     html = BeautifulSoup(r.text, "html.parser")
     return html.find_all("section", class_="items-box")
 
