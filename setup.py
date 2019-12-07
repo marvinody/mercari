@@ -14,7 +14,7 @@ setuptools.setup(
     description='mercari api-like wrapper',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url='https://github.com/marvinody/suruguya/',
+    url='https://github.com/marvinody/mercari/',
     packages=setuptools.find_packages(),
     install_requires=requirements,
     classifiers=[
