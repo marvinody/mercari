@@ -20,6 +20,9 @@ class Item:
         self.productCode = kwargs['productCode']
 
 
+pat = re.compile(r"/jp/(.*)[/\?]")
+
+
 def createItem(productHTML):
     # if this script breaks here, use the following line to see the new html and adjust it
     # print(productHTML)
@@ -33,14 +36,17 @@ def createItem(productHTML):
     priceDigits = re.sub('[^0-9]', '', priceText)
     # and just parse into int
     price = int(priceDigits)
+    productCodeSearch = pat.search(url)
+    productCode = productCodeSearch.group(
+        1) if productCodeSearch else productName
+    productCode = productCode.rstrip('/')
 
     return Item(
         productURL=url,
         imageURL=imageUrl,
         productName=name,
         price=price,
-        productCode=url[url.rstrip('/').rindex("/")+1:],
-    )
+        productCode=productCode)
 
 
 def parse(url, data):
