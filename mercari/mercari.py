@@ -8,19 +8,22 @@ from math import ceil
 import requests
 from bs4 import BeautifulSoup
 
-rootURL = "https://www.mercari.com/jp/search/"
+rootURL = "https://www.mercari.com"
+searchURL = "{}/jp/search".format(rootURL)
+
+SOLD_OUT_TEXT = "該当する商品が見つかりません"
 
 
 class Item:
     def __init__(self, *args, **kwargs):
-        self.productURL = kwargs['productURL']
+        self.productURL = "{}{}".format(rootURL, kwargs['productURL'])
         self.imageURL = kwargs['imageURL']
         self.productName = kwargs['productName']
         self.price = kwargs['price']
         self.productCode = kwargs['productCode']
 
 
-pat = re.compile(r"/jp/(.*)[/\?]")
+pat = re.compile(r"/jp/items/(.*)[/\?]")
 
 
 def createItem(productHTML):
@@ -49,10 +52,27 @@ def createItem(productHTML):
         productCode=productCode)
 
 
-def parse(url, data):
+def isSoldOut(html):
+    try:
+        desc = html.find("p", class_="search-result-description")
+        return SOLD_OUT_TEXT in desc.text
+    except AttributeError:
+        return False
+
+
+def parse(text):
     # returns [] if page has no items on it
     # returns [Item's] otherwise
 
+    html = BeautifulSoup(text, "html.parser")
+    soldOut = isSoldOut(html)
+    if soldOut:
+        return []
+    items = html.find_all("section", class_="items-box")
+    return [createItem(item) for item in items]
+
+
+def fetch(url, data):
     # let's build up the url ourselves
     # I know requests can do it, but I need to do it myself cause we need
     # special encoding!
@@ -71,8 +91,7 @@ def parse(url, data):
         num,
         url)
     r = requests.get(url)
-    html = BeautifulSoup(r.text, "html.parser")
-    return html.find_all("section", class_="items-box")
+    return parse(r.text)
 
 
 # returns an generator for Item objects
@@ -83,9 +102,9 @@ def search(keywords):
         "page": 1,
         "status_on_sale": 1,
     }
-    items = parse(rootURL, data)
+    items = fetch(searchURL, data)
 
     while items:
-        yield from [createItem(item) for item in items]
+        yield from items
         data['page'] += 1
-        items = parse(rootURL, data)
+        items = fetch(searchURL, data)
