@@ -72,7 +72,7 @@ def parse(text):
     return [createItem(item) for item in items]
 
 
-def fetch(url, data):
+def fetch(url, data, use_google_proxy):
     # let's build up the url ourselves
     # I know requests can do it, but I need to do it myself cause we need
     # special encoding!
@@ -80,31 +80,39 @@ def fetch(url, data):
         url,
         urllib.parse.urlencode(data)
     )
-    # now we'll escape everything again so google doesn't parse it themselves
-    # we need to pass these params into the mercari site, not google's
-    url = urllib.parse.quote_plus(url)
+    if use_google_proxy:
+        # now we'll escape everything again so google doesn't parse it themselves
+        # we need to pass these params into the mercari site, not google's
+        url = urllib.parse.quote_plus(url)
 
-    # use google's proxy because mercari blocks some servers it seems like?
-    # they have a bunch, so let's pick a random one each time incase they're tracking us...
-    num = random.randint(0, 32)
-    url = "https://images{}-focus-opensocial.googleusercontent.com/gadgets/proxy?container=none&url={}".format(
-        num,
-        url)
-    r = requests.get(url)
+        # use google's proxy because mercari blocks some servers it seems like?
+        # they have a bunch, so let's pick a random one each time incase they're tracking us...
+        num = random.randint(0, 32)
+        url = "https://images{}-focus-opensocial.googleusercontent.com/gadgets/proxy?container=none&url={}".format(
+            num,
+            url)
+
+    headers = {
+        'User-Agent': 'curl/7.35.0',
+        'Accept': '*/*',
+        'Accept-Encoding': 'deflate, gzip'
+    }
+    r = requests.get(url, headers=headers)
+    r.raise_for_status()
     return parse(r.text)
 
 
 # returns an generator for Item objects
 # keeps searching until no results so may take a while to get results back
-def search(keywords):
+def search(keywords, use_google_proxy=True):
     data = {
         "keyword": keywords,
         "page": 1,
         "status_on_sale": 1,
     }
-    items = fetch(searchURL, data)
+    items = fetch(searchURL, data, use_google_proxy)
 
     while items:
         yield from items
         data['page'] += 1
-        items = fetch(searchURL, data)
+        items = fetch(searchURL, data, use_google_proxy)
