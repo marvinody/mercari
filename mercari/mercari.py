@@ -21,6 +21,7 @@ class Item:
         self.productName = kwargs['productName']
         self.price = kwargs['price']
         self.productCode = kwargs['productCode']
+        self.soldOut = kwargs['soldOut']
 
 
 pat = re.compile(r"/jp/items/(.*)[/\?]")
@@ -33,6 +34,11 @@ def createItem(productHTML):
     url = productHTML.find('a')['href']
     name = productHTML.find('h3').text
     imageUrl = productHTML.find('img')['data-src']
+    # test if item has sold-out badge
+    try:
+        soldOut = productHTML.find('div', class_='item-sold-out-badge').text == "SOLD"
+    except AttributeError:
+        soldOut = False
     # this will pull a bunch of junk with it like yen sign and weird chars
     priceText = productHTML.find('div', class_='items-box-price').text
     # so we just remove anything that's not a digit
@@ -49,7 +55,8 @@ def createItem(productHTML):
         imageURL=imageUrl,
         productName=name,
         price=price,
-        productCode=productCode)
+        productCode=productCode,
+        soldOut=soldOut)
 
 
 def isSoldOut(html):
@@ -104,12 +111,13 @@ def fetch(url, data, use_google_proxy):
 
 # returns an generator for Item objects
 # keeps searching until no results so may take a while to get results back
-def search(keywords, use_google_proxy=True):
+def search(keywords, use_google_proxy=True, skip_soldout=True):
     data = {
         "keyword": keywords,
         "page": 1,
-        "status_on_sale": 1,
     }
+    if skip_soldout:
+        data["status_on_sale"] = 1
     items = fetch(searchURL, data, use_google_proxy)
 
     while items:
