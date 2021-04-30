@@ -14,5 +14,5 @@ six==1.13.0
 soupsieve==1.9.5
 tqdm==4.40.1
 twine==1.15.0
-urllib3==1.25.7
+urllib3==1.25.8
 webencodings==0.5.1
