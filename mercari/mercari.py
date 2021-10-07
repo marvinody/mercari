@@ -6,80 +6,57 @@ from enum import Enum
 from math import ceil
 
 import requests
-from bs4 import BeautifulSoup
+import DpopUtils
 
-rootURL = "https://www.mercari.com"
-searchURL = "{}/jp/search".format(rootURL)
-
-SOLD_OUT_TEXT = "該当する商品が見つかりません"
+rootURL = "https://api.mercari.jp/"
+rootProductURL = "https://jp.mercari.com/item/"
+searchURL = "{}search_index/search".format(rootURL)
 
 
 class Item:
     def __init__(self, *args, **kwargs):
-        self.productURL = "{}{}".format(rootURL, kwargs['productURL'])
+        self.id = kwargs['productID']
+        self.productURL = "{}{}".format(rootProductURL, kwargs['productID'])
         self.imageURL = kwargs['imageURL']
-        self.productName = kwargs['productName']
+        self.productName = kwargs['name']
         self.price = kwargs['price']
-        self.productCode = kwargs['productCode']
+        self.status = kwargs['status']
+        self.soldOut = kwargs['status'] == "sold_out"
+
+    @staticmethod
+    def fromApiResp(apiResp):
+        return Item(
+            productID=respItem['id'],
+            name=respItem["name"],
+            price=respItem["price"],
+            status=respItem['status'],
+            imageURL=respItem['thumbnails'][0],
+            condition=respItem['item_condition']["id"],
+            itemCategory=respItem['item_category']['name'],
+        )
 
 
-pat = re.compile(r"/jp/items/(.*)[/\?]")
-
-
-def createItem(productHTML):
-    # if this script breaks here, use the following line to see the new html and adjust it
-    # print(productHTML)
-
-    url = productHTML.find('a')['href']
-    name = productHTML.find('h3').text
-    imageUrl = productHTML.find('img')['data-src']
-    # this will pull a bunch of junk with it like yen sign and weird chars
-    priceText = productHTML.find('div', class_='items-box-price').text
-    # so we just remove anything that's not a digit
-    priceDigits = re.sub('[^0-9]', '', priceText)
-    # and just parse into int
-    price = int(priceDigits)
-    productCodeSearch = pat.search(url)
-    productCode = productCodeSearch.group(
-        1) if productCodeSearch else productName
-    productCode = productCode.rstrip('/')
-
-    return Item(
-        productURL=url,
-        imageURL=imageUrl,
-        productName=name,
-        price=price,
-        productCode=productCode)
-
-
-def isSoldOut(html):
-    try:
-        desc = html.find("p", class_="search-result-description")
-        return SOLD_OUT_TEXT in desc.text
-    except AttributeError:
-        return False
-
-
-def parse(text):
-    # returns [] if page has no items on it
+def parse(resp):
+    # returns [] if resp has no items on it
     # returns [Item's] otherwise
+    if resp["meta"]["num_found"] == 0:
+        return [], False
 
-    html = BeautifulSoup(text, "html.parser")
-    soldOut = isSoldOut(html)
-    if soldOut:
-        return []
-    items = html.find_all("section", class_="items-box")
-    return [createItem(item) for item in items]
+    respItems = resp["data"]
+    return [Item.fromApiResp(item) for item in respItems], resp["meta"]["has_next"]
 
 
-def fetch(url, data, use_google_proxy):
+def fetch(baseURL, data, use_google_proxy):
     # let's build up the url ourselves
     # I know requests can do it, but I need to do it myself cause we need
     # special encoding!
     url = "{}?{}".format(
-        url,
+        baseURL,
         urllib.parse.urlencode(data)
     )
+
+    # I'm not sure if this works anymore but I'm leaving it in in case it does
+    # My reason for not working is that requests require dpop which the proxy wouldn't pass through naturally...
     if use_google_proxy:
         # now we'll escape everything again so google doesn't parse it themselves
         # we need to pass these params into the mercari site, not google's
@@ -92,27 +69,39 @@ def fetch(url, data, use_google_proxy):
             num,
             url)
 
+    DPOP = DpopUtils.generate_DPOP(
+        # let's see if this gets blacklisted, but it also lets them track
+        uuid="Mercari Python Bot",
+        method="GET",
+        url=baseURL
+
+    )
+
     headers = {
-        'User-Agent': 'curl/7.35.0',
+        'DPOP': DPOP,
+        'X-Platform': 'web',  # mercari requires this header
         'Accept': '*/*',
         'Accept-Encoding': 'deflate, gzip'
     }
     r = requests.get(url, headers=headers)
     r.raise_for_status()
-    return parse(r.text)
+    return parse(r.json())
 
 
 # returns an generator for Item objects
 # keeps searching until no results so may take a while to get results back
-def search(keywords, use_google_proxy=True):
+def search(keywords, use_google_proxy=False, sort="created_time", order="desc", status="on_sale", limit=120):
     data = {
         "keyword": keywords,
-        "page": 1,
-        "status_on_sale": 1,
+        "limit": 120,
+        "page": 0,
+        "sort": sort,
+        "order": order,
+        "status": status,
     }
-    items = fetch(searchURL, data, use_google_proxy)
+    has_next_page = True
 
-    while items:
+    while has_next_page:
+        items, has_next_page = fetch(searchURL, data, use_google_proxy)
         yield from items
         data['page'] += 1
-        items = fetch(searchURL, data, use_google_proxy)
