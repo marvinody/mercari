@@ -39,3 +39,14 @@ for item in mercari.search("東方 ふもふも", use_google_proxy=False):
 The wrapper will throw on any 4xx or 5xx http status code.
 
 Main reason I've seen errors is because mercari decides to throw 403 if they blacklist your IP. I've tried to get around this with the google proxy, but it seems like google themselves are blocking either the IP or the mercari domain.
+
+
+## Development
+
+Clone this repo, install the dependencies in `requirement.txt` and off you go.
+
+## Deploying / Publishing
+
+- `python setup.py sdist`
+
+- `twine upload dist/mercari-<version>.tar.gz`
