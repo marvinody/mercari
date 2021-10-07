@@ -8,7 +8,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='mercari',
-    version='0.0.6',
+    version='1.0.0',
     author='marvinody',
     author_email='manny@sadpanda.moe',
     description='mercari api-like wrapper',
@@ -18,6 +18,6 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=requirements,
     classifiers=[
-        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.9.7",
     ]
 )

@@ -1,10 +1,4 @@
-# Mercari Wrapper (Archived)
-
-This project has been archived from python because of Mercari changes to their site.
-
-I have some starter code to help anyone who's trying to generate an API access token in `mercari/dpopUtils.py` but the cryptography library is above my head. The missing part that's failing is that the signature returned is DER encoded around ASN.1 encoding of a `Dss-Sig-Value` sequence. I think it needs to be decoded for a valid JWT to be made...
-
-But I'm bored of this honestly, and I'm moving my code to the JavaScript versions
+# Mercari Wrapper
 
 A simple api wrapper around the Mercari jp site.
 
@@ -14,20 +8,26 @@ Simple usage can be something like
 import mercari
 
 for item in mercari.search("東方 ふもふも"):
-    print("{}, {}".format(item.productName, item.productURL))
+    print("{}, {}".format(item.name, item.productURL))
 ```
 
-the item object contains the following properties
+the item object contains the following properties:
 
+- id
 - productURL
 - imageURL
 - productName
 - price
-- productCode
+- status
+- soldOut
 
 ## Google Proxy
 
-By default, the wrapper will try to use a google proxy to hide traffic. This is a bit finicky and I think google has wised up recently. To disable it and have your requests by direct to mercari, use it in the following way
+~~By default, the wrapper will try to use a google proxy to hide traffic. This is a bit finicky and I think google has wised up recently. To disable it and have your requests by direct to mercari, use it in the following way~~
+
+This is false now, and the google proxyy is removed. Because of how the api endpoint works, this had to be removed.
+
+I've left this part in here to not gaslight any one that it never existed.
 
 ```python
 import mercari

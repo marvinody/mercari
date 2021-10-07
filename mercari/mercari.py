@@ -26,13 +26,13 @@ class Item:
     @staticmethod
     def fromApiResp(apiResp):
         return Item(
-            productID=respItem['id'],
-            name=respItem["name"],
-            price=respItem["price"],
-            status=respItem['status'],
-            imageURL=respItem['thumbnails'][0],
-            condition=respItem['item_condition']["id"],
-            itemCategory=respItem['item_category']['name'],
+            productID=apiResp['id'],
+            name=apiResp["name"],
+            price=apiResp["price"],
+            status=apiResp['status'],
+            imageURL=apiResp['thumbnails'][0],
+            condition=apiResp['item_condition']["id"],
+            itemCategory=apiResp['item_category']['name'],
         )
 
 
@@ -46,7 +46,7 @@ def parse(resp):
     return [Item.fromApiResp(item) for item in respItems], resp["meta"]["has_next"]
 
 
-def fetch(baseURL, data, use_google_proxy):
+def fetch(baseURL, data):
     # let's build up the url ourselves
     # I know requests can do it, but I need to do it myself cause we need
     # special encoding!
@@ -54,20 +54,6 @@ def fetch(baseURL, data, use_google_proxy):
         baseURL,
         urllib.parse.urlencode(data)
     )
-
-    # I'm not sure if this works anymore but I'm leaving it in in case it does
-    # My reason for not working is that requests require dpop which the proxy wouldn't pass through naturally...
-    if use_google_proxy:
-        # now we'll escape everything again so google doesn't parse it themselves
-        # we need to pass these params into the mercari site, not google's
-        url = urllib.parse.quote_plus(url)
-
-        # use google's proxy because mercari blocks some servers it seems like?
-        # they have a bunch, so let's pick a random one each time incase they're tracking us...
-        num = random.randint(0, 32)
-        url = "https://images{}-focus-opensocial.googleusercontent.com/gadgets/proxy?container=none&url={}".format(
-            num,
-            url)
 
     DPOP = DpopUtils.generate_DPOP(
         # let's see if this gets blacklisted, but it also lets them track
@@ -90,7 +76,7 @@ def fetch(baseURL, data, use_google_proxy):
 
 # returns an generator for Item objects
 # keeps searching until no results so may take a while to get results back
-def search(keywords, use_google_proxy=False, sort="created_time", order="desc", status="on_sale", limit=120):
+def search(keywords, sort="created_time", order="desc", status="on_sale", limit=120):
     data = {
         "keyword": keywords,
         "limit": 120,
@@ -102,6 +88,6 @@ def search(keywords, use_google_proxy=False, sort="created_time", order="desc", 
     has_next_page = True
 
     while has_next_page:
-        items, has_next_page = fetch(searchURL, data, use_google_proxy)
+        items, has_next_page = fetch(searchURL, data)
         yield from items
         data['page'] += 1
