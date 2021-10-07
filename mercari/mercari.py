@@ -6,7 +6,7 @@ from enum import Enum
 from math import ceil
 
 import requests
-import DpopUtils
+from .DpopUtils import generate_DPOP
 
 rootURL = "https://api.mercari.jp/"
 rootProductURL = "https://jp.mercari.com/item/"
@@ -55,7 +55,7 @@ def fetch(baseURL, data):
         urllib.parse.urlencode(data)
     )
 
-    DPOP = DpopUtils.generate_DPOP(
+    DPOP = generate_DPOP(
         # let's see if this gets blacklisted, but it also lets them track
         uuid="Mercari Python Bot",
         method="GET",
