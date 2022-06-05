@@ -1,14 +1,14 @@
 import setuptools
 
-with open('requirements.txt') as f:
+with open("requirements.txt", "r", encoding="utf-8") as f:
     requirements = f.read().splitlines()
 
-with open("README.md", "r") as fh:
+with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setuptools.setup(
     name='mercari',
-    version='1.0.1',
+    version='1.0.2',
     author='marvinody',
     author_email='manny@sadpanda.moe',
     description='mercari api-like wrapper',
