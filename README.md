@@ -8,7 +8,7 @@ Simple usage can be something like
 import mercari
 
 for item in mercari.search("東方 ふもふも"):
-    print("{}, {}".format(item.name, item.productURL))
+    print("{}, {}".format(item.productName, item.productURL))
 ```
 
 the item object contains the following properties:
