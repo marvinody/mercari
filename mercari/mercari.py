@@ -21,7 +21,7 @@ class Item:
         self.productName = kwargs['name']
         self.price = kwargs['price']
         self.status = kwargs['status']
-        self.sold = kwargs['status'] != "on_sale"
+        self.soldOut = kwargs['status'] != "on_sale"
 
     @staticmethod
     def fromApiResp(apiResp):
