@@ -76,7 +76,7 @@ def fetch(baseURL, data):
 
 # returns an generator for Item objects
 # keeps searching until no results so may take a while to get results back
-def search(keywords, sort="created_time", order="desc", status="on_sale", limit=120):
+def search(keywords, sort="created_time", order="desc", status="on_sale", limit=120, exclude_keywords=""):
     data = {
         "keyword": keywords,
         "limit": 120,
@@ -85,6 +85,10 @@ def search(keywords, sort="created_time", order="desc", status="on_sale", limit=
         "order": order,
         "status": status,
     }
+
+    if exclude_keywords != "":
+        data["exclude_keyword"] = exclude_keywords
+
     has_next_page = True
 
     while has_next_page:
