@@ -11,6 +11,8 @@ for item in mercari.search("東方 ふもふも"):
     print("{}, {}".format(item.productName, item.productURL))
 ```
 
+**The search call will take a long time because it goes through all the pages to find every item.** It does not return parts where you paginate yourself.
+
 the item object contains the following properties:
 
 - id
@@ -21,24 +23,43 @@ the item object contains the following properties:
 - status
 - soldOut
 
-## Google Proxy
-
-~~By default, the wrapper will try to use a google proxy to hide traffic. This is a bit finicky and I think google has wised up recently. To disable it and have your requests by direct to mercari, use it in the following way~~
-
-This is false now, and the google proxyy is removed. Because of how the api endpoint works, this had to be removed.
-
-I've left this part in here to not gaslight any one that it never existed.
-
+If you want to do more specific searching, you can use something like the following
 ```python
-import mercari
+from mercari import search, MercariSearchStatus, MercariSort, MercariOrder
 
-for item in mercari.search("東方 ふもふも", use_google_proxy=False):
+for item in search(
+        "",
+        sort=MercariSort.SORT_PRICE,
+        order=MercariOrder.ORDER_DESC,
+        status=MercariSearchStatus.SOLD_OUT
+    ):
     print("{}, {}".format(item.productName, item.productURL))
+
 ```
 
-The wrapper will throw on any 4xx or 5xx http status code.
+The defaults are currently:
 
-Main reason I've seen errors is because mercari decides to throw 403 if they blacklist your IP. I've tried to get around this with the google proxy, but it seems like google themselves are blocking either the IP or the mercari domain.
+- `sort=MercariSort.SORT_CREATED_TIME`
+- `order=MercariOrder.ORDER_DESC` 
+- `status=MercariSearchStatus.ON_SALE`
+
+Which will sort by most recent to oldest, and only show on sale item.
+
+### MercariSort
+- STATUS_DEFAULT
+- STATUS_ON_SALE
+- STATUS_SOLD_OUT
+### MercariOrder
+- SORT_DEFAULT
+- SORT_CREATED_TIME
+- SORT_NUM_LIKES
+- SORT_SCORE
+- SORT_PRICE
+### MercariSearchStatus
+- ORDER_DESC
+- ORDER_ASC
+
+You can also pass `excluded_keywords="something to exclude"` if you want to remove certain pieces from your search
 
 
 ## Development
