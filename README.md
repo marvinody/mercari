@@ -59,6 +59,8 @@ Which will sort by most recent to oldest, and only show on sale item.
 - ORDER_DESC
 - ORDER_ASC
 
+You can also pass `excluded_keywords="something to exclude"` if you want to remove certain pieces from your search
+
 
 ## Development
 

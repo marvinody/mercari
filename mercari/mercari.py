@@ -99,7 +99,8 @@ def pageToPageToken(page):
 
 # returns an generator for Item objects
 # keeps searching until no results so may take a while to get results back
-def search(keywords, sort=MercariSort.SORT_CREATED_TIME, order=MercariOrder.ORDER_DESC, status=MercariSearchStatus.ON_SALE):
+
+def search(keywords, sort=MercariSort.SORT_CREATED_TIME, order=MercariOrder.ORDER_DESC, status=MercariSearchStatus.ON_SALE, exclude_keywords=""):
 
     # This is per page and not for the final result
     limit = 120
@@ -117,7 +118,8 @@ def search(keywords, sort=MercariSort.SORT_CREATED_TIME, order=MercariOrder.ORDE
             "keyword": keywords,
             "sort": sort,
             "order": order,
-            "status": [status]
+            "status": [status],
+            "excludeKeyword": exclude_keywords,
         },
         # I'm not certain what these are, but I believe it's what mercari queries against
         # this is the default in their site, so leaving it as these 2
