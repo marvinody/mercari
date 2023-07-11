@@ -109,7 +109,7 @@ def search(keywords, sort=MercariSort.SORT_CREATED_TIME, order=MercariOrder.ORDE
         # this seems to be random, but we'll add a prefix for mercari to track if they wanted to
         "userId": "MERCARI_BOT_{}".format(uuid.uuid4()), 
         "pageSize": limit,
-        "pageToken": pageToPageToken(1),
+        "pageToken": pageToPageToken(0),
         # same thing as userId, courtesy of a prefix for mercari
         "searchSessionId": "MERCARI_BOT_{}".format(uuid.uuid4()),
         # this is hardcoded in their frontend currently, so leaving it
