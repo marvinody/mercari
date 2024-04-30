@@ -44,6 +44,8 @@ class Item:
         self.price = kwargs['price']
         self.status = kwargs['status']
         self.soldOut = kwargs['status'] != MercariItemStatus.ITEM_STATUS_SOLD_OUT
+        self.created = kwargs['created']
+        self.updated = kwargs['updated']
 
     @staticmethod
     def fromApiResp(apiResp):
@@ -53,6 +55,8 @@ class Item:
             price=apiResp["price"],
             status=apiResp['status'],
             imageURL=apiResp['thumbnails'][0],
+            created=apiResp['created'],
+            updated=apiResp['updated'],
         )
 
 
