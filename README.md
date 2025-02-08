@@ -2,6 +2,10 @@
 
 A simple api wrapper around the Mercari jp site.
 
+**This package does not use scraping of the underlying HTML**, it simulates API requests by generating tokens according to how Mercari.JP expects it. This should result in quicker response times, less breaking changes (due to layout swaps), and overall better experience.
+
+## Searching
+
 Simple usage can be something like
 
 ```python
@@ -60,6 +64,30 @@ Which will sort by most recent to oldest, and only show on sale item.
 - ORDER_ASC
 
 You can also pass `excluded_keywords="something to exclude"` if you want to remove certain pieces from your search
+
+## Item Info
+
+```python
+from mercari import getItemInfo
+
+itemId = 'm48957867611' # get it using a search or some other way
+# default country code is US, so don't need to pass if you're fine with US
+item = getItemInfo(itemId, country_code="US")
+print(item.id, item.price, item.name)
+```
+
+The item returned is properly typed so you can explore it using intellisense in your IDE. I don't do any safe checks or conversions on parameters but some gotchas:
+- status is just a string which can be `on_sale`
+- price is the JPY price, but `converted_price` contains the currency according to the `country_code` you pass in (USD by default)
+- any timestamp field (`created`, `updated`) come back as int with the unix timestamp in seconds
+- pretty much 90% of fields, I'm unsure if they're useful (wtf is a pager id? additional_service??)
+- some properties I didn't get samples that contained property so they're blank
+    - `comments` - empty array always
+    - `application_attributes` - empty dict always
+    - `hash_tags` - empty array always
+    - `additional_services` - empty array always
+
+Another big gotcha is that I didn't bother adding great error handling, so if an item is expired, it'll throw a request error with like 403 if it used to be an item, or 404 is the itemId doesn't exist. If people are still using this, I'll add that in but I'm not consuming this lib myself any more.
 
 
 ## Development
