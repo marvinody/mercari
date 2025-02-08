@@ -1,19 +1,19 @@
 import uuid
 import json
 import requests
-
+from .MercariItemFull import Item as MercariItemFull
 from .DpopUtils import generate_DPOP
 
 rootURL = "https://api.mercari.jp/"
 rootProductURL = "https://jp.mercari.com/item/"
 searchURL = "{}v2/entities:search".format(rootURL)
+itemInfoURL = "{}items/get".format(rootURL) # idk why not v2
 
 
 class MercariSearchStatus:
     DEFAULT = "STATUS_DEFAULT"
     ON_SALE = "STATUS_ON_SALE"
     SOLD_OUT = "STATUS_SOLD_OUT"
-
 
 class MercariSort:
     SORT_DEFAULT = 'SORT_DEFAULT'
@@ -55,7 +55,7 @@ class Item:
             imageURL=apiResp['thumbnails'][0],
         )
 
-
+# used for the search endpoint
 # returns [] if resp has no items on it
 # returns [Item's] otherwise
 def parse(resp):
@@ -66,12 +66,17 @@ def parse(resp):
     nextPageToken = resp["meta"]["nextPageToken"]
     return [Item.fromApiResp(item) for item in respItems], bool(nextPageToken), nextPageToken
 
+# used for the itemInfo endpoint
+def parseItemInfo(resp):
+    return MercariItemFull(
+        **resp['data']
+    )
 
-def fetch(url, data):
+def fetch(url, data, parser, method="POST"):
     DPOP = generate_DPOP(
         # let's see if this gets blacklisted, but it also lets them track
         uuid="Mercari Python Bot",
-        method="POST",
+        method=method,
         url=url,
     )
 
@@ -87,11 +92,14 @@ def fetch(url, data):
     
     serializedData = json.dumps(data, ensure_ascii=False).encode('utf-8')
 
-    r = requests.post(url, headers=headers, data=serializedData)
+    if method == "POST":
+        r = requests.post(url, headers=headers, data=serializedData)
+    else:
+        r = requests.get(url, headers=headers, params=data)    
 
     r.raise_for_status()
 
-    return parse(r.json())
+    return parser(r.json())
 
 # not sure if the v1 prefix ever changes, but from quick testing, doesn't seem like it
 def pageToPageToken(page):
@@ -132,6 +140,24 @@ def search(keywords, sort=MercariSort.SORT_CREATED_TIME, order=MercariOrder.ORDE
     has_next_page = True
 
     while has_next_page:
-        items, has_next_page, next_page_token = fetch(searchURL, data)
+        items, has_next_page, next_page_token = fetch(searchURL, data, parse)
         yield from items
         data['pageToken'] = next_page_token
+
+
+def getItemInfo(itemID, country_code="US"):
+    data = {
+        "id": itemID,
+        "country_code": country_code,
+        "include_item_attributes": True,
+        "include_product_page_component": True,
+        "include_non_ui_item_attributes": True,
+        "include_donation": True,
+        "include_offer_like_coupon_display": True,
+        "include_offer_coupon_display": True,
+        "include_item_attributes_sections": True,
+        "include_auction": False
+    }
+
+    item = fetch(itemInfoURL, data, parseItemInfo, method="GET")
+    return item
