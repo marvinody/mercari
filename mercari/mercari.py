@@ -44,6 +44,8 @@ class Item:
         self.price = kwargs['price']
         self.status = kwargs['status']
         self.soldOut = kwargs['status'] != MercariItemStatus.ITEM_STATUS_SOLD_OUT
+        self.created = kwargs['created']
+        self.updated = kwargs['updated']
         # this is optional, only present if the item is an auction
         if 'auction' in kwargs:
             self.auction = ItemAuction(**kwargs['auction'])

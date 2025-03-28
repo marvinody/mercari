@@ -26,6 +26,8 @@ the item object contains the following properties:
 - price
 - status
 - soldOut
+- created
+- updated
 - auction (can be None) with following properties
     - bid_deadline (can be different types depending on search vs item info)
     - total_bid
