@@ -26,6 +26,10 @@ the item object contains the following properties:
 - price
 - status
 - soldOut
+- auction (can be None) with following properties
+    - bid_deadline (can be different types depending on search vs item info)
+    - total_bid
+    - highest_bid
 
 If you want to do more specific searching, you can use something like the following
 ```python

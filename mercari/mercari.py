@@ -1,7 +1,7 @@
 import uuid
 import json
 import requests
-from .MercariItemFull import Item as MercariItemFull
+from .MercariItemFull import Item as MercariItemFull, ItemAuction
 from .DpopUtils import generate_DPOP
 
 rootURL = "https://api.mercari.jp/"
@@ -37,24 +37,39 @@ class MercariItemStatus:
 
 class Item:
     def __init__(self, *args, **kwargs):
-        self.id = kwargs['productID']
-        self.productURL = "{}{}".format(rootProductURL, kwargs['productID'])
-        self.imageURL = kwargs['imageURL']
+        self.id = kwargs['id']
+        self.productURL = "{}{}".format(rootProductURL, kwargs['id'])
+        self.imageURL = kwargs['thumbnails'][0]
         self.productName = kwargs['name']
         self.price = kwargs['price']
         self.status = kwargs['status']
         self.soldOut = kwargs['status'] != MercariItemStatus.ITEM_STATUS_SOLD_OUT
+        # this is optional, only present if the item is an auction
+        if 'auction' in kwargs:
+            self.auction = ItemAuction(**kwargs['auction'])
+        else:
+            self.auction = None
 
     @staticmethod
     def fromApiResp(apiResp):
         return Item(
-            productID=apiResp['id'],
-            name=apiResp["name"],
-            price=apiResp["price"],
-            status=apiResp['status'],
-            imageURL=apiResp['thumbnails'][0],
+            **apiResp
         )
 
+# because requests is doing some dumb bullshit and using capital booleans
+# we'll force lowercase booleans to fix this dumb shit
+def convert_booleans(obj):
+    if isinstance(obj, bool):
+        return str(obj).lower()
+    elif isinstance(obj, dict):
+        # Recursively process each key-value pair in the dictionary
+        return {k: convert_booleans(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        # Recursively process each item in the list
+        return [convert_booleans(item) for item in obj]
+    else:
+        return obj
+    
 # used for the search endpoint
 # returns [] if resp has no items on it
 # returns [Item's] otherwise
@@ -95,7 +110,7 @@ def fetch(url, data, parser, method="POST"):
     if method == "POST":
         r = requests.post(url, headers=headers, data=serializedData)
     else:
-        r = requests.get(url, headers=headers, params=data)    
+        r = requests.get(url, headers=headers, params=convert_booleans(data))    
 
     r.raise_for_status()
 
@@ -129,6 +144,7 @@ def search(keywords, sort=MercariSort.SORT_CREATED_TIME, order=MercariOrder.ORDE
             "status": [status],
             "excludeKeyword": exclude_keywords,
         },
+        "withAuction": True,
         # I'm not certain what these are, but I believe it's what mercari queries against
         # this is the default in their site, so leaving it as these 2
         "defaultDatasets": [
@@ -156,7 +172,7 @@ def getItemInfo(itemID, country_code="US"):
         "include_offer_like_coupon_display": True,
         "include_offer_coupon_display": True,
         "include_item_attributes_sections": True,
-        "include_auction": False
+        "include_auction": True
     }
 
     item = fetch(itemInfoURL, data, parseItemInfo, method="GET")

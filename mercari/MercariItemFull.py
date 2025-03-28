@@ -1,3 +1,10 @@
+# some endpoints use similar keys but different case, bidDeadline vs bid_deadline
+def get_from_kwargs(kwargs, *keys, default=""):
+    for key in keys:
+        if key in kwargs:
+            return kwargs[key]
+    return default
+
 class Printable:
     def __repr__(self):
         return f"{self.__class__.__name__}({', '.join(f'{k}={v!r}' for k, v in self.__dict__.items())})"
@@ -90,11 +97,12 @@ class ItemCategory(Printable):
         self.root_category_name = kwargs['root_category_name']
 
 class ItemCategoryNTiers(ItemCategory):
-    brand_group_id: int
+    brand_group_id: int = 0
 
     def __init__(self, *args, **kwargs):
         super().__init__(**kwargs)
-        self.brand_group_id = kwargs['brand_group_id']
+        if 'brand_group_id' in kwargs:
+          self.brand_group_id = kwargs['brand_group_id']
 
 class ParentCategoryNTier(Printable):
     id: str
@@ -205,6 +213,18 @@ class Color(Printable):
         self.name = kwargs['name']
         self.rgb = kwargs['rgb']
 
+class ItemAuction(Printable):
+    id: str
+    bid_deadline: str
+    total_bid: str
+    highest_bid: str
+
+    def __init__(self, *args, **kwargs):
+        self.id = kwargs.get('id', "")
+        self.bid_deadline = get_from_kwargs(kwargs, 'bid_deadline', 'bidDeadline', 'expected_end_time')
+        self.total_bid = get_from_kwargs(kwargs, 'totalBid', 'total_bids', default="0") # yes, one has an 's'. intentional
+        self.highest_bid = get_from_kwargs(kwargs, 'highest_bid', 'highestBid', default="0")
+
 class Item(Printable):
     id: str
     productURL: str
@@ -257,6 +277,7 @@ class Item(Printable):
     photo_descriptions: list[str]
     meta_title: str
     meta_subtitle: str
+    auction: ItemAuction = None # this is optional, only present if the item is an auction
 
 
 
@@ -316,3 +337,8 @@ class Item(Printable):
         self.photo_descriptions = kwargs['photo_descriptions'] if 'photo_descriptions' in kwargs else []
         self.meta_title = kwargs['meta_title']
         self.meta_subtitle = kwargs['meta_subtitle']
+        # this is optional, only present if the item is an auction
+        if 'auction_info' in kwargs:
+            self.auction = ItemAuction(**kwargs['auction_info'])
+        else:
+            self.auction = None
