@@ -338,7 +338,7 @@ class Item(Printable):
         self.meta_title = kwargs['meta_title']
         self.meta_subtitle = kwargs['meta_subtitle']
         # this is optional, only present if the item is an auction
-        if 'auction_info' in kwargs:
+        if "auction_info" in kwargs and kwargs["auction_info"] is not None:
             self.auction = ItemAuction(**kwargs['auction_info'])
         else:
             self.auction = None

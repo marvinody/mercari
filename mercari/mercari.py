@@ -47,7 +47,7 @@ class Item:
         self.created = kwargs['created']
         self.updated = kwargs['updated']
         # this is optional, only present if the item is an auction
-        if 'auction' in kwargs:
+        if "auction" in kwargs and kwargs["auction"] is not None:
             self.auction = ItemAuction(**kwargs['auction'])
         else:
             self.auction = None
